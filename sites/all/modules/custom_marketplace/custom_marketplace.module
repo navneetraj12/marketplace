@@ -1,0 +1,410 @@
+<?php 
+/**
+ * Implements hook_element_info_alter().
+*/
+function custom_marketplace_element_info_alter(&$types) {
+  if (isset($types['password_confirm']['#process']) && (($position = array_search('user_form_process_password_confirm', $types['password_confirm']['#process'])) !== FALSE)) {
+    unset($types['password_confirm']['#process'][$position]);
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+*/
+function custom_marketplace_form_alter(&$form, &$form_state, $form_id) {
+  $arg = arg();
+  switch ($form_id) {
+   case 'product_node_form':
+     $option_array = $form['field_category']['und']['#options'];
+     foreach($form['field_category']['und']['#options'] as $key=>$value ){
+        if(is_numeric($key)) {
+          	$child = taxonomy_get_children($key);
+           if(!empty($child)) {
+            unset($option_array[$key]);
+           }
+           else {
+             $option_array[$key] = str_replace('-', '', $value);
+           }
+        }
+     } 
+     $form['field_category']['und']['#options'] = $option_array;
+
+     break; 
+
+   case 'user_register_form':
+	     global $user;
+		    if (!$user->uid) {
+			    $form['#submit'][] = 'custom_marketplace_add_role_submit';
+		    }
+      if(!$user->uid) {
+        unset($form['field_business_name']);
+        unset($form['field_company_information']);
+        unset($form['field_business_logo']);
+        unset($form['field_website']);
+        unset($form['field_merchant_business_type']);
+        unset($form['field_service_area']);
+        unset($form['field_year_stablishment']);
+        unset($form['field_year_of_establishmen']);
+        unset($form['field_ownership_type']);
+        unset($form['field_contact_person']);
+        unset($form['field_landline_phone_number']);
+        unset($form['field_landline_phone_number_1']);
+        unset($form['field_mobile_number_2']);
+        unset($form['field_fax']);
+        unset($form['field_fax_2']);
+        unset($form['field_contact_person']);
+        unset($form['field_landline_phone_number']);
+        unset($form['field_landline_phone_number_1']);
+        unset($form['field_manufacturer']);
+        unset($form['#group_children']['field_join_as']);
+        unset($form['#group_children']['account']);
+        unset($form['#group_children']['field_mobile_no']);
+        unset($form['field_addidtional_office']);
+								unset($form['field_verify_user_mobile']);
+        unset($form['field_prefered_category']);
+        unset($form['field_prefered_category']);
+      }
+      elseif($arg[0]  == 'admin' && $arg[1]  == 'people' && $arg[2]  == 'p2rp-create' && $arg[3]  == 'adminuser') {
+        unset($form['field_business_name']);
+        unset($form['field_company_information']);
+        unset($form['field_business_logo']);
+        unset($form['field_website']);
+        unset($form['field_merchant_business_type']);
+        unset($form['field_service_area']);
+        unset($form['field_year_stablishment']);
+        unset($form['field_year_of_establishmen']);
+        unset($form['field_ownership_type']);
+        unset($form['field_contact_person']);
+        unset($form['field_landline_phone_number']);
+        unset($form['field_landline_phone_number_1']);
+        unset($form['field_mobile_number_2']);
+        unset($form['field_fax']);
+        unset($form['field_fax_2']);
+        unset($form['field_contact_person']);
+        unset($form['field_landline_phone_number']);
+        unset($form['field_landline_phone_number_1']);
+        unset($form['field_manufacturer']);
+        unset($form['#group_children']['field_join_as']);
+        unset($form['#group_children']['account']);
+        unset($form['#group_children']['field_mobile_no']);
+        unset($form['field_join_as']);
+        unset($form['field_mobile_no']);
+								unset($form['field_addidtional_office']);
+								unset($form['field_verify_user_mobile']);
+        unset($form['field_prefered_category']);
+      }
+      else {
+        unset($form['field_prefered_category']);
+      }
+
+      break;
+
+	  case 'user_profile_form':
+    global $user;
+			 if ($arg[0] == 'user' && is_numeric($arg[1]) && $arg[2] == 'edit') {
+			   if (in_array('admin',$form['#user']->roles) || in_array('Moderator',$form['#user']->roles) || in_array('Customer Care',$form['#user']->roles) ) {
+        unset($form['field_business_name']);
+        unset($form['field_company_information']);
+        unset($form['field_business_logo']);
+        unset($form['field_website']);
+        unset($form['field_merchant_business_type']);
+        unset($form['field_service_area']);
+        unset($form['field_year_stablishment']);
+        unset($form['field_year_of_establishmen']);
+        unset($form['field_ownership_type']);
+        unset($form['field_contact_person']);
+        unset($form['field_landline_phone_number']);
+        unset($form['field_landline_phone_number_1']);
+        unset($form['field_mobile_number_2']);
+        unset($form['field_fax']);
+        unset($form['field_fax_2']);
+        unset($form['field_contact_person']);
+        unset($form['field_landline_phone_number']);
+        unset($form['field_landline_phone_number_1']);
+        unset($form['field_manufacturer']);
+        unset($form['#group_children']['field_join_as']);
+        unset($form['#group_children']['account']);
+        unset($form['#group_children']['field_mobile_no']);
+        unset($form['field_join_as']);
+        unset($form['field_mobile_no']);
+        unset($form['contact']);
+				    unset($form['ckeditor']);
+								unset($form['field_addidtional_office']);
+        unset($form['field_verify_user_mobile']);
+        unset($form['field_prefered_category']);
+      }
+			   elseif (in_array('Seller',$form['#user']->roles) || in_array('Buyer',$form['#user']->roles)) {
+        if (in_array('Seller', $user->roles) || in_array('Buyer',$user->roles)) {
+          unset($form['field_verify_user_mobile']);
+          $key = array_search('user_validate_current_pass', $form['#validate']);
+          if ($key !== FALSE) {
+            unset($form['#validate'][$key]);
+          }
+          // hide the current password fields
+          $form['account']['current_pass_required_value']['#access'] = FALSE;
+          $form['account']['current_pass']['#access'] = FALSE;
+       }
+       $form['field_merchant_business_type']['und'][0] = array();
+       if(!in_array('Buyer',$user->roles)) {
+         unset($form['field_prefered_category']);
+       }
+       $form['mail']['#disabled'] = TRUE;
+       $form['field_join_as']['#disabled'] = TRUE;
+				   unset($form['contact']);
+				   unset($form['ckeditor']);
+			   }
+    }  
+		  break;
+
+    case 'product_node_form':
+	   case 'page_node_form':
+    case 'brand_node_form':
+   		 global $user;
+	     if (in_array('administrator', $user->roles)){
+			     $link = 'admin/content';
+		    }
+		    elseif (in_array('Seller', $user->roles)) {
+			     $link = 'user/'.$user->uid.'/product';
+		    }
+		    else {
+			     $link = 'admin/workbench';	
+		    }
+		    $form['actions']['cancel'] = array(
+        '#markup' => l(t('Cancel'), $link),
+        '#weight' => '1000',
+      );
+		    break;
+
+  	case 'user_login':
+		   $form['name']['#attributes']['placeholder'] = t('Enter your e-mail address');
+	    $form['pass']['#attributes']['placeholder'] = t('Enter password');
+     $form['name']['#title'] = t('Email');
+		   break;
+
+	  case 'user_pass':
+		   $form['name']['#attributes']['placeholder'] = t('Enter your e-mail address');
+		   break;
+
+   default:
+      break;	
+  }
+}
+
+function custom_marketplace_add_role_submit($form, &$form_state) {
+  if ($form_state['user']->uid) {
+    $myuser = module_invoke('user', 'load', $form_state['user']->uid); 
+    switch ($form_state['values']['field_join_as']['und'][0]['value']) {
+		    case 0:
+			     $myuserroles[4]  = 'Seller'; // seller role id
+        $myuserroles[5]  = 'Buyer';  // buyer role id
+			     break;
+		
+		    case 1:
+			   $myuserroles[5]  = 'Buyer'; // buyer role id
+			   break;
+
+		    case 2:
+			    $myuserroles[4]  = 'Seller'; // seller role id
+			    break;
+	   }
+	   $user_id = module_invoke('user', 'save', $myuser, array('roles' => $myuserroles));
+  }
+}
+
+/**
+ * Implements hook_js_alter()
+ */
+function custom_marketplace_js_alter(&$javascript) {
+  $javascript['misc/ajax.js']['weight'] = -10;
+}
+
+function custom_marketplace_menu_alter(&$items) {
+  unset($items['user/%user/imce']);
+  unset($items['user/%/scheduler']); 
+}
+
+function custom_marketplace_init(){
+	global $user;
+	if(in_array('admin',$user->roles) || in_array('Moderator',$user->roles) || in_array('Customer Care',$user->roles) ) {
+  	drupal_add_css(drupal_get_path('theme', 'marketplace') . '/css/marketplace-admin.css', array('group' =>CSS_THEME,'weight' => 9999));	
+  }
+}
+
+function custom_marketplace_menu()
+{
+  $menu['my_account'] = array(
+    'title' => 'My Account',
+    'page callback' => 'custom_marketplace_my_account_redirect',
+    'access callback' => 'user_is_logged_in',
+  );
+  $menu['all-category'] = array(
+    'title' => 'All Category',
+    'page callback' => 'custom_marketplace_all_category',
+    'access callback' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  return $menu;
+}
+
+function custom_marketplace_my_account_redirect()
+{
+  global $user;
+  $user_verify = user_load($user->uid)->field_verify_user_mobile;
+  if(is_array($user_verify) && (in_array('Seller', $user->roles) || in_array('Buyer',$user->roles))) {
+    foreach($user_verify['und'] as $verify_array) {
+      $verify_user[] = $verify_array['value'];
+    }
+    if(!in_array(2,$verify_user)) {
+      drupal_set_message(t("Your profile is pending verification."), 'error');
+    }
+  }
+  if (in_array('Seller', $user->roles)) {
+	   drupal_goto('user/' . $user->uid.'/product');
+  }
+  else if (in_array('Buyer', $user->roles)) {
+	   drupal_goto('<front>');
+  }
+  else {
+	   drupal_goto('<front>');
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function custom_marketplace_block_info() {
+  $blocks['marketplace_quicklink'] = array(
+    'info' => t('Marketplace - Quick Link'),
+  );
+  $blocks['marketplace_home_page_slider'] = array(
+    'info' => t('Marketplace - Slider Area'),
+  );
+  $blocks['marketplace_all_category_block'] = array(
+    'info' => t('Marketplace - All Category Block'),
+  );
+
+  return $blocks;
+}
+
+
+/**
+ * Implements hook_block_view().
+ */
+function custom_marketplace_block_view($delta = '') {
+  $block = array();
+  switch ($delta) {
+    case 'marketplace_quicklink':
+      $block['content'] = custom_marketplace_footer_quicklink();
+      break;
+	
+	   case 'marketplace_home_page_slider':
+      $block['content'] = custom_marketplace_home_page_slider();
+      break;
+
+	   case 'marketplace_all_category_block':
+      $block['content'] = custom_marketplace_all_category_block();
+      break;
+
+	 }
+
+  return $block;
+}
+
+function custom_marketplace_all_category_block() {
+  foreach(taxonomy_get_tree(2, 0, 1) as $term) {
+    $child_term = taxonomy_get_children($term->tid);
+    if($child_term) {
+      $child_array = array();  
+      foreach($child_term as $term_child) {
+        $child_array['name'] = l($term_child->name, url('taxonomy/term/'.$term_child->tid));
+        $image = theme( 'image_style', array(
+          'style_name' => '180_186',
+          'path' => $term_child->field_category_image['und'][0]['uri'],
+        ));
+        $child_array['image'] = l($image, url('taxonomy/term/'.$term_child->tid), array('html' => TRUE));  
+        $child_array['tid'] = $term_child->tid;
+      }
+      $category_listing[$term->name][] = $child_array;
+    }
+  }
+  $form = module_invoke('search_api_page', 'block_view', 'search_index');
+	 return theme('custom_marketplace_category_page', array(
+     'category_listing' => $category_listing,
+     'search_form' => render($form['content']),
+  ));
+}
+function custom_marketplace_footer_quicklink() {
+	$output = '<div class="col-md-2 col-sm-6">
+                    <div class="footer-menu">
+                        <h3 class="footer-wid-title">Quick links</h3>
+                        <ul>';
+						foreach(menu_tree_all_data('menu-footer-menu') as $key=>$link) {
+							$output .= '<li>'.l($link['link']['link_title'], $link['link']['link_path']).'</li>';	
+						}
+                            
+     $output .=        '</ul>                        
+					</div>
+                </div>';
+	return $output;	 
+}
+
+function custom_marketplace_home_page_slider() {
+//$form = drupal_render(drupal_get_form('search_api_page_search_form_search_index'));
+$form = module_invoke('search_api_page', 'block_view', 'search_index');
+$output = '    <div class="slider-area">
+        <div id="slide-list" class="carousel carousel-fade slide" data-ride="carousel">
+            
+            <div class="carousel-inner" role="listbox">
+                <div class="item active">
+                    <div class="single-slide">
+                        <div class="slide-bg slide-one"></div>
+                        <div class="slide-text-wrapper">
+                            <div class="slide-text">
+                                <div class="container">
+                                	<div class="row">
+                                    	<div class="col-md-12 text-right">
+                                        	<h2>Fiber. Yarn. Fabric. Garment.<br>
+Your one stop shop for "Everything Textile"
+</h2>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-5 col-md-offset-7">
+                                            <div class="slide-content">
+                                            	<div class="row">
+													<!-- Search -->'.render($form['content']).'
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>        
+    </div> <!-- End slider area -->';
+return $output;
+
+}
+
+function custom_marketplace_all_category() {
+  return '';
+}
+
+/**
+ * Implements hook_theme().
+ */
+function custom_marketplace_theme() {
+  return array(
+    'custom_marketplace_category_page' => array(
+      'variables' => array(
+        'category_listing' => NULL,
+        'search_form' => NULL,
+      ),
+      'template' => 'custom_marketplace_category_page',
+      'path' => drupal_get_path('module', 'custom_marketplace') . '/templates',
+    ),
+  );
+}
