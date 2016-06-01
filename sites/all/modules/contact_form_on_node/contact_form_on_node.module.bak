@@ -1,0 +1,410 @@
+<?php
+
+/**
+ * @file
+ * Creates a link or a form to contact the author, above node link.
+ */
+
+define('CONTACT_FORM_ON_NODE_MODE_USER', 1);
+define('CONTACT_FORM_ON_NODE_MODE_SYSTEM', 2);
+
+
+/**
+ * Implements hook_help().
+ */
+function contact_form_on_node_help($path, $arg) {
+  // Declare the output variable.
+  $output = '';
+
+  switch ($path) {
+    case "admin/help#contact_form_on_node":
+      $output = '<p>' . t("Displays contact form or contact link under a node") . '</p>';
+      break;
+  }
+
+  return $output;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function contact_form_on_node_permission() {
+  return array(
+    'administer contact_form_on_node' => array(
+      'title' => t('Administer Contact on Node Form'),
+      'description' => t('Perform administration tasks for Contact on Node Form module.'),
+    ),
+    'access personal contact form' => array(
+      'title' => t('Access personal contact form'),
+      'description' => t('Allow people to access personal contact form.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function contact_form_on_node_menu() {
+  $menu = array();
+  $menu['admin/config/system/contact_form_on_node'] = array(
+    'title' => 'Contact Form On Node',
+    'description' => 'Configure Contact Form On Node',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('contact_form_on_node_settings'),
+    'access arguments' => array('administer contact_form_on_node'),
+    'file' => 'contact_form_on_node.admin.inc',
+  );
+  return $menu;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function contact_form_on_node_node_view($node, $view_mode) {
+  // Do we show the link?
+  $show_link = variable_get('contact_form_on_node_show_link', FALSE);
+  // Do we show the form?
+  $show_form = variable_get('contact_form_on_node_show_form', TRUE);
+
+  // Are we in teaser?
+  if ($view_mode == "teaser") {
+    $show_link = variable_get('contact_form_on_node_show_link_in_teaser', TRUE);
+    $show_form = variable_get('contact_form_on_node_show_form_in_teaser', FALSE);
+  }
+
+  if ($show_link) {
+    // Get the list of enabled content types.
+    $enabled_types = variable_get('contact_form_on_node_types', array());
+    // If the contact form was enabled for this node type, go to the next check.
+    if (!empty($enabled_types) && $enabled_types[$node->type] != "0") {
+      // Test if this content type needs a link added to it.
+      if (user_access('access personal contact form')) {
+        // Add the link.
+        $node->content['links']['contact-node'] = array(
+          '#links' => array(
+            array(
+              'title' => t('Contact Seller'),
+              'href' => "user/" . $node->uid . "/contact/" . $node->nid,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  if ($show_form) {
+    // Get the list of enabled content types.
+    $enabled_types = variable_get('contact_form_on_node_types', array());
+    // If the contact form was enabled for this node type, go to the next level.
+    if (!empty($enabled_types) && $enabled_types[$node->type] != "0") {
+      $mode = variable_get('contact_form_on_node_mode', CONTACT_FORM_ON_NODE_MODE_USER);
+      switch ($mode) {
+        case CONTACT_FORM_ON_NODE_MODE_USER:
+          global $user;
+          // Do not show the form, if the current user is not the author of the
+          // content.
+          if ($node->uid != $user->uid) {
+            // Add a field set for the contact form, to set it apart from the node
+            // content.
+            $node->content['contact_form'] = array(
+              '#type' => 'fieldset',
+              '#title' => t('Contact author'),
+              '#weight' => 99,
+            );
+
+            // If the current user is allowed to use the user contact form,
+            // display it.
+            if (user_access('access user contact forms')) {
+              // We load contact helpers.
+              module_load_include("inc", "contact", "contact.pages");
+              // Then we load the author as a user.
+              $author = user_load($node->uid);
+              // Add the contact form.
+              $node->content['contact_form']['contact_form'] = drupal_get_form('contact_personal_form', $author);
+              if (variable_get('contact_form_on_node_subject_is_title', FALSE) == TRUE) {
+                $node->content['contact_form']['contact_form']['subject']['#value'] = t('Re: ') . $node->title;
+              }
+            }
+            else {
+              // Add the message.
+              $node->content['contact_form']['contact_form']['#markup'] = t("You have to be logged to send a message");
+            }
+          }
+          break;
+
+        case CONTACT_FORM_ON_NODE_MODE_SYSTEM:
+          // If the current user is allowed to use the site wide contact form,
+          // display it.
+          if (user_access('access site-wide contact form')) {
+            // Load contact helpers from the Contact module.
+            module_load_include("inc", "contact", "contact.pages");
+            // Add a field set for the contact form, to set it apart from the
+            // node content.
+            $node->content['contact_form'] = array(
+              '#type' => 'fieldset',
+              '#title' => t('Contact'),
+              '#weight' => 99,
+            );
+            // Add the contact form.
+            $node->content['contact_form']['contact_form'] = drupal_get_form('contact_site_form');
+            if (variable_get('contact_form_on_node_subject_is_title', FALSE) == TRUE) {
+              $node->content['contact_form']['contact_form']['subject']['#value'] = t('Re: ') . $node->title;
+            }
+          }
+          break;
+      }
+    }
+  }
+
+  // Set the page title.
+  if ($view_mode == "page") {
+    drupal_set_title($node->title);
+  }
+}
+
+
+###############Code By Navneet Raj############
+function contact_form_on_node_form_alter(&$form, &$form_state, $form_id){
+	 
+	if($form_id == 'contact_personal_form'){
+		$node_id = arg(3);
+		$node2 = node_load($node_id);
+		$form['subject']['#default_value'] = 'Enquiry On  - '  . truncate_utf8($node2->title, 30, TRUE, TRUE) ; 
+		$form['nid'] = array('#type' => 'hidden', '#value' => $node_id);
+		$form['seller_id'] = array('#type' => 'hidden', '#value' => arg(1));
+		$form['#submit'][] = 'contact_form_on_node_submit';
+
+
+	}
+	else if($form_id == 'product_node_form' || $form_id == 'promotion_node_form'){
+		unset($form['revision_information']['log']);
+		unset($form['revision_information']['#attributes']);
+		$form['revision_information']['#type'] = 'contaner';
+		$form['revision_information']['#weight'] = 100;
+
+		/*echo "<pre>";
+		print_r($form);
+		echo "</pre>";*/
+	}
+	
+		
+	
+}
+
+function contact_form_on_node_submit(&$form, &$form_state){
+global $base_url;
+$node_id = $form_state['values']['nid'];
+$seller_id = $form_state['values']['seller_id'];
+$message = $form_state['values']['message'];
+$sender_name = $form_state['values']['name'];
+$mail = $form_state['values']['mail'];
+$table = 'send_enquiry_report';
+ // Initializing $record array with values.
+    $record = array (
+    "uid" => $seller_id,
+    "nid" => $node_id,
+    "name" => $sender_name,
+    "email" => $mail,
+    "message" => $message,
+	"created" => time(),
+    );
+	// Inserting $record (data) into the database. Here $table variable contains the name of the table.
+    drupal_write_record ($table, $record);
+    // Getting the last inserted ID. (ufid) is the primary key of the table in my scenario.
+	 $_SESSION['messages'] = '';
+	 drupal_set_message(t("Enquiry has been sent to Seller! They will get back to you!"));
+//	 echo url('node/'.$node_id);
+	 drupal_goto("node/".$node_id);
+	 //echo $base_url.url('node/'.$node_id);
+//	 die();
+	 //drupal_goto($base_url.url('node/'.$node_id));
+
+}
+
+function contact_form_on_node_views_data() {
+
+  $data['send_enquiry_report']['table']['group'] = t('Enquiry Table');
+
+  $data['send_enquiry_report']['table']['base'] = array(
+    'field' => 'id',
+    'title' => t('send_enquiry_report'), 
+    'weight' => -10,
+  );
+
+  $data['send_enquiry_report']['table']['join'] = array(
+    'node' => array(
+      'left_field' => 'nid', 
+      'field' => 'nid',
+    ),
+  );
+
+  $data['send_enquiry_report']['nid'] = array(
+    'title' => t('Enquiry - nid'), 
+    'relationship' => array(
+      'base' => 'node',
+      'field' => 'nid',
+      'handler' => 'views_handler_relationship', 
+      'label' => t('node'),
+    ),
+	 'field' => array(
+      'handler' => 'views_handler_field_numeric',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+	
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  );
+
+  $data['send_enquiry_report']['uid'] = array(
+    'title' => t('Enquiry - Uid'), 
+    'relationship' => array(
+      'base' => 'users',
+      'field' => 'uid',
+      'handler' => 'views_handler_relationship', 
+      'label' => t('enquiry - user'),
+    ),
+	 'field' => array(
+      'handler' => 'views_handler_field_numeric',
+      'click sortable' => TRUE,
+    ),
+	
+	'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  );
+
+ 
+  $data['send_enquiry_report']['name'] = array(
+    'title' => t('Enquiry - Name'), 
+    'field' => array(
+      'handler' => 'views_handler_field', 
+      'click sortable' => TRUE,
+    ), 
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ), 
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+    ), 
+    'argument' => array(
+      'handler' => 'views_handler_argument_string',
+    ),
+  );
+
+  $data['send_enquiry_report']['message'] = array(
+    'title' => t('Enquiry - Message '), 
+    'field' => array(
+      'handler' => 'views_handler_field', 
+      'click sortable' => TRUE,
+    ), 
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ), 
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+    ), 
+    'argument' => array(
+      'handler' => 'views_handler_argument_string',
+    ),
+  );
+
+   $data['send_enquiry_report']['email'] = array(
+    'title' => t('Enquiry - Email'), 
+    'field' => array(
+      'handler' => 'views_handler_field', 
+      'click sortable' => TRUE,
+    ), 
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ), 
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+    ), 
+    'argument' => array(
+      'handler' => 'views_handler_argument_string',
+    ),
+  );
+
+ 
+  $data['send_enquiry_report']['created'] = array(
+    'title' => t('Enquiry - Created'), 
+    'field' => array(
+      'handler' => 'views_handler_field_date', 
+      'click sortable' => TRUE,
+    ), 
+    'sort' => array(
+      'handler' => 'views_handler_sort_date',
+    ), 
+    'filter' => array(
+      'handler' => 'views_handler_filter_date',
+    ),
+  );
+
+  return $data;
+}
+###############End ###########################
+/*function contact_form_on_node_views_pre_execute(&$view) {
+  dpq($view->build_info['query']);
+}*/
+
+function contact_form_on_node_preprocess(&$variables, $hook){
+	global $user;
+	if(isset($user)){
+			if(is_numeric(arg(1)) && arg(0) == 'user' && arg(2) == 'product' && arg(3) == '') {
+				
+
+				if($user->uid == arg(1) || in_array('administrator',$user->roles)){
+				
+				}
+				else {
+					drupal_goto('user/'.$user->uid.'/product');
+				}
+			}
+
+			else if(is_numeric(arg(1)) && arg(0) == 'user' && arg(2) == 'promotion' && arg(3) == '') {
+				global $user;
+
+				if($user->uid == arg(1) || in_array('administrator',$user->roles)){
+				
+				}
+				else {
+					drupal_goto('user/'.$user->uid.'/promotion');
+				}
+			}
+
+			else if(is_numeric(arg(1)) && arg(0) == 'user' && arg(2) == 'enquiry-report' && arg(3) == '') {
+				global $user;
+
+				if($user->uid == arg(1) || in_array('administrator',$user->roles)){
+				
+				}
+				else {
+					drupal_goto('user/'.$user->uid.'/enquiry-report');
+				}
+			}
+	}
+	else {
+		return;
+	}
+}
+
+function contact_form_on_node_menu_local_tasks_alter(&$data, $router_item, $root_path){
+  //echo $router_item['path'];
+  
+  if($router_item['path'] == 'user' && $root_path == 'user') {
+        unset($data['tabs'][0]['output'][0]);
+  }
+  else if ($router_item['path'] == 'user/password' && $root_path == 'user/password') {
+        unset($data['tabs'][0]['output'][0]);
+  }
+}

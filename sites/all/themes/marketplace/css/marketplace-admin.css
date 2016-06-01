@@ -1,0 +1,14 @@
+#overlay-content fieldset {border:none;}
+#overlay-content .exposed-filters .form-item label {float:none;}
+#overlay-content {font-size:12px;}
+#overlay-content #user-admin-permissions{display:none;}
+#overlay-content div.admin.my-workbench .right{width:60%;}
+#overlay-content #edit-items-per-page{width:35%;}
+#overlay-content #edit-body-und-0-format{display:none;}
+#overlay-content .field-type-image {float:none;}
+#overlay-content #edit-field-product-attributes-und-actions-new-category,
+#overlay-content #edit-field-product-attributes-und-actions-add-category
+{display:none;}
+#overlay-content  #edit-field-brand-und-0-nid,
+#overlay-content  #edit-field-related-product-und-0-nid
+#overlay-content  #edit-name{width:30%;}
